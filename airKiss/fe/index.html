@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>AirKiss</title>
+    <script src="./config.js"></script>
+    <script src="http://res.wx.qq.com/open/js/jweixin-1.4.0.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsSHA/1.5.0/sha.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <script>
+      const createNonceStr = function() {
+        return Math.random()
+          .toString(36)
+          .substr(2, 15)
+      }
+      const createTimestamp = function() {
+        return parseInt(new Date().getTime() / 1000) + ''
+      }
+      const raw = function(args) {
+        let keys = Object.keys(args)
+        keys = keys.sort()
+        const newArgs = {}
+        keys.forEach(function(key) {
+          newArgs[key.toLowerCase()] = args[key]
+        })
+        let string = ''
+        for (const k in newArgs) {
+          string += '&' + k + '=' + newArgs[k]
+        }
+        string = string.substr(1)
+        return string
+      }
+
+      /**
+       * @synopsis 签名算法
+       *
+       * @param jsapi_ticket 用于签名的 jsapi_ticket
+       * @param url 用于签名的 url ，注意必须动态获取，不能 hardcode
+       *
+       * @returns
+       */
+      const sign = function(jsapi_ticket, url) {
+        const ret = {
+          jsapi_ticket,
+          nonceStr: createNonceStr(),
+          timestamp: createTimestamp(),
+          url
+        }
+        const string = raw(ret)
+        const shaObj = new jsSHA(string, 'TEXT')
+        ret.signature = shaObj.getHash('SHA-1', 'HEX')
+        return ret
+      }
+      // http://localhost:3003/api/airkiss
+      $.get(url, res => {
+        const { ticket } = res.data
+        const { signature, nonceStr, timestamp } = sign(ticket, location.href)
+        wx.config({
+          debug: false,
+          appId,
+          timestamp,
+          nonceStr,
+          signature,
+          jsApiList: ['configWXDeviceWiFi']
+        })
+        wx.ready(function() {
+          wx.invoke('configWXDeviceWiFi')
+        })
+        wx.error(function(res) {
+          alert('配置出错')
+        })
+      })
+    </script>
+  </body>
+</html>

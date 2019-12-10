@@ -42,7 +42,7 @@ const getJsApiTicket = access_token => {
     }
   )
 }
-app.use('/', (req, res) => {
+app.use('/api/airkiss', (req, res) => {
   res.send({ data: jsapi_ticket })
 })
 
